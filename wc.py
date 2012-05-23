@@ -1,49 +1,81 @@
 #!/usr/bin/python
 import sys
+from math import log10
 
-def get_length(filename, options):
+def get_length_filename(filename, options):
     fp = open(filename)
-    lengths = get_length_pointer(fp)
+    lengths = get_length(fp, options)
     fp.close()
-    if options:
-        tmp_lengths = lengths
-        lengths = []
-        if "l" in options:
-            lengths.append(tmp_lengths[0])
-        if "m" in options:
-            lengths.append(tmp_lengths[1])
-        if "c" in options:
-            lengths.append(tmp_lengths[2])
     return lengths
 
-def get_length_pointer(fp):
+def get_length(fp, options):
     word_length = char_length = line_length = 0
     for line in fp:
         char_length += len(line)
         word_length += len(line.split())
         line_length += 1
-    return line_length, word_length, char_length
+    return filter_by_options((line_length, word_length, char_length), options)
 
-def join_to_eight(strings):
+def filter_by_options(lengths, options):
+    if options:
+        ret_lengths = []
+        for pos, option in enumerate(options):
+            if option:
+                ret_lengths.append(lengths[pos])
+    return ret_lengths
+
+def join_to_eight(numbers):
     stri = ""
-    for x in strings:
-        length = len(x)
+    for number in numbers:
+        length = int(log10(number)) + 1
         if length < 8:
-            stri += "{0}{1}".format(" " * (8 - length), x)
+            stri += "{0}{1}".format(" " * (8 - length), number)
         else:
-            stri += " {0}".format(x)
+            stri += " {0}".format(number)
     return stri
 
-if __name__ == "__main__":
-    argc = len(sys.argv)
-    if argc > 1:
-        if argc == 2:
-            filename = sys.argv[1]
-            options = False
+def parse_options(options):
+    ret_options = []
+    for letter in options[1:]:
+        if letter == "c":
+            ret_options.append(2)
+        elif letter == "w":
+            ret_options.append(1)
+        elif letter == "l":
+            ret_options.append(0)
         else:
-            options = sys.argv[1][1:]
-            filename = sys.argv[2]
-        lengths = map(lambda x: str(x), get_length(filename, options))
-        print("{0} {1}".format(join_to_eight(lengths), filename))
+            raise ValueError("Illegal argument '{0}'.".format(letter))
+    return ret_options
+
+def parse_args(options):
+    filename = False
+
+    ret_options = [False, False, False]
+    for pos, arg in enumerate(options):
+        if arg.startswith("-") and len(arg) > 1:
+            or_list = parse_options(arg)
+            for pos in or_list:
+                ret_options[pos] |= True
+        else:
+            if pos != len(options) - 1:
+                raise ValueError("Illegal argument '{0}'.".format(arg))
+            filename = arg
+    return validate(ret_options), filename
+
+def validate(options):
+    if options[0] or options[1] or options[2]:
+        return options
     else:
-        print("Please give a filename.")
+        return [True, True, True]
+
+def stringify(lengths, filename):
+    return "{0} {1}".format(join_to_eight(lengths), filename)
+
+if __name__ == "__main__":
+    options, filename = parse_args(sys.argv[1:])
+    if filename:
+        lengths = get_length_filename(filename, options)
+        print(stringify(lengths, filename))
+    else:
+        lengths = get_length(sys.stdin, options)
+        print(stringify(lengths, ""))
