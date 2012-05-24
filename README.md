@@ -5,5 +5,4 @@ Python wc
 I'm bored
 
 ##TODO
-Tests -- but realistically this will never happen  
-Multiple files, should be easy
+Tests -- but realistically this will never happen

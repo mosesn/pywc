@@ -48,19 +48,21 @@ def parse_options(options):
     return ret_options
 
 def parse_args(options):
-    filename = False
+    filenames = []
 
     ret_options = [False, False, False]
+    start = True
     for pos, arg in enumerate(options):
-        if arg.startswith("-") and len(arg) > 1:
+        if start and (arg.startswith("-") and len(arg) > 1):
             or_list = parse_options(arg)
             for pos in or_list:
                 ret_options[pos] |= True
+        elif not start:
+            filenames.append(arg)
         else:
-            if pos != len(options) - 1:
-                raise ValueError("Illegal argument '{0}'.".format(arg))
-            filename = arg
-    return validate(ret_options), filename
+            start = False
+            filenames.append(arg)
+    return validate(ret_options), filenames
 
 def validate(options):
     if options[0] or options[1] or options[2]:
@@ -72,10 +74,14 @@ def stringify(lengths, filename):
     return "{0} {1}".format(join_to_eight(lengths), filename)
 
 if __name__ == "__main__":
-    options, filename = parse_args(sys.argv[1:])
-    if filename:
-        lengths = get_length_filename(filename, options)
-        print(stringify(lengths, filename))
+    options, filenames = parse_args(sys.argv[1:])
+    if filenames:
+        for filename in filenames:
+            try:
+                lengths = get_length_filename(filename, options)
+                print(stringify(lengths, filename))
+            except IOError as err:
+                print err
     else:
         lengths = get_length(sys.stdin, options)
         print(stringify(lengths, ""))
