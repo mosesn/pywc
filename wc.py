@@ -52,6 +52,7 @@ def parse_args(options):
 
     ret_options = [False, False, False]
     start = True
+
     for pos, arg in enumerate(options):
         if start and (arg.startswith("-") and len(arg) > 1):
             or_list = parse_options(arg)
